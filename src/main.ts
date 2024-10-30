@@ -2,6 +2,8 @@
 import { Actor } from 'apify';
 // Crawlee - web scraping and browser automation library (Read more at https://crawlee.dev)
 import { CheerioCrawler, Dataset } from 'crawlee';
+import { myHappyInstance } from './utils.js';
+import { routes } from './routes.js';
 // this is ESM project, and as such, it requires you to specify extensions in your relative imports
 // read more about this here: https://nodejs.org/docs/latest-v18.x/api/esm.html#mandatory-file-extensions
 // note that we need to use `.js` even when inside TS files
@@ -12,8 +14,7 @@ interface Input {
     maxRequestsPerCrawl: number;
 }
 
-// The init() call configures the Actor for its environment. It's recommended to start every Actor with an init()
-await Actor.init();
+myHappyInstance.doStuff();
 
 // Structure of input is defined in input_schema.json
 const {
@@ -26,20 +27,7 @@ const proxyConfiguration = await Actor.createProxyConfiguration();
 const crawler = new CheerioCrawler({
     proxyConfiguration,
     maxRequestsPerCrawl,
-    requestHandler: async ({ enqueueLinks, request, $, log }) => {
-        log.info('enqueueing new URLs');
-        await enqueueLinks();
-
-        // Extract title from the page.
-        const title = $('title').text();
-        log.info(`${title}`, { url: request.loadedUrl });
-
-        // Save url and title to Dataset - a table-like storage.
-        await Dataset.pushData({ url: request.loadedUrl, title });
-    },
+    requestHandler: routes,
 });
 
 await crawler.run(startUrls);
-
-// Gracefully exit the Actor process. It's recommended to quit all Actors with an exit()
-await Actor.exit();
